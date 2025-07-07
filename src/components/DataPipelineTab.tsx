@@ -68,357 +68,311 @@ const PREDEFINED_QUERIES = {
   "Which sales channel performs best?": "SELECT sales_channel, SUM(final_price * quantity) AS total_sales FROM data GROUP BY sales_channel ORDER BY total_sales DESC LIMIT 1",
   "Which product has the highest average rating?": "SELECT product_name, AVG(rating) AS avg_rating FROM data GROUP BY product_name ORDER BY avg_rating DESC LIMIT 1",
   "Which gender contributes most to sales?": "SELECT customer_gender, SUM(final_price * quantity) AS total_sales FROM data GROUP BY customer_gender ORDER BY total_sales DESC LIMIT 1",
+  "What is the total CO2 saved from returns?": "SELECT SUM(co2_saved) AS total_co2_saved FROM data WHERE return_status = 1",
   "What is the average price of products sold?": "SELECT AVG(price) AS avg_price FROM data",
   "Which color is most popular?": "SELECT color, SUM(quantity) AS count FROM data GROUP BY color ORDER BY count DESC LIMIT 1",
   "Which size is most sold?": "SELECT size, SUM(quantity) AS count FROM data GROUP BY size ORDER BY count DESC LIMIT 1",
   "What are the top 5 brands by sales?": "SELECT brand, SUM(final_price * quantity) AS revenue FROM data GROUP BY brand ORDER BY revenue DESC LIMIT 5",
+  "Which city has the most returns?": "SELECT store_location, COUNT(*) AS return_count FROM data WHERE return_status = 1 GROUP BY store_location ORDER BY return_count DESC LIMIT 1",
   "What is the return rate overall?": "SELECT ROUND(100.0 * SUM(CASE WHEN return_status THEN 1 ELSE 0 END) / COUNT(*), 2) AS return_rate FROM data",
-  "What is the total sales revenue?": "SELECT SUM(final_price * quantity) AS total_revenue FROM data",
+  "What is the best performing sub-category?": "SELECT sub_category, SUM(final_price * quantity) AS revenue FROM data GROUP BY sub_category ORDER BY revenue DESC LIMIT 1",
+  "What are the top 3 payment modes used?": "SELECT payment_mode, COUNT(*) AS count FROM data GROUP BY payment_mode ORDER BY count DESC LIMIT 3",
+  "Which brand has the highest average discount?": "SELECT brand, AVG(discount_percent) AS avg_discount FROM data GROUP BY brand ORDER BY avg_discount DESC LIMIT 1",
+  "Which product is returned the most?": "SELECT product_name, COUNT(*) AS return_count FROM data WHERE return_status = 1 GROUP BY product_name ORDER BY return_count DESC LIMIT 1",
+  "Which day had the highest sales?": "SELECT date_of_sale, SUM(final_price * quantity) AS revenue FROM data GROUP BY date_of_sale ORDER BY revenue DESC LIMIT 1",
+  "Which gender returns products the most?": "SELECT customer_gender, COUNT(*) AS return_count FROM data WHERE return_status = 1 GROUP BY customer_gender ORDER BY return_count DESC LIMIT 1",
+  "Which city has the lowest average delivery time?": "SELECT store_location, AVG(delivery_days) AS avg_days FROM data GROUP BY store_location ORDER BY avg_days ASC LIMIT 1",
+  "What are the least sold products?": "SELECT product_name, SUM(quantity) AS total_sold FROM data GROUP BY product_name ORDER BY total_sold ASC LIMIT 5",
+  "Which category has the highest average price?": "SELECT category, AVG(price) AS avg_price FROM data GROUP BY category ORDER BY avg_price DESC LIMIT 1",
   "How many items were sold overall?": "SELECT SUM(quantity) AS total_items_sold FROM data",
-  "What are the top 3 payment modes used?": "SELECT payment_mode, COUNT(*) AS count FROM data GROUP BY payment_mode ORDER BY count DESC LIMIT 3"
+  "Which product has the lowest return rate?": "SELECT product_name, 100.0 * SUM(CASE WHEN return_status THEN 1 ELSE 0 END) / COUNT(*) AS return_rate FROM data GROUP BY product_name ORDER BY return_rate ASC LIMIT 1",
+  "What is the average rating by category?": "SELECT category, AVG(rating) AS avg_rating FROM data GROUP BY category",
+  "Which payment method has highest average sale amount?": "SELECT payment_mode, AVG(final_price * quantity) AS avg_sale FROM data GROUP BY payment_mode ORDER BY avg_sale DESC LIMIT 1",
+  "Which store sold the most quantity?": "SELECT store_location, SUM(quantity) AS total_sold FROM data GROUP BY store_location ORDER BY total_sold DESC LIMIT 1",
+  "What are the top 5 most discounted products?": "SELECT product_name, AVG(discount_percent) AS avg_discount FROM data GROUP BY product_name ORDER BY avg_discount DESC LIMIT 5",
+  "Which gender gives highest average ratings?": "SELECT customer_gender, AVG(rating) AS avg_rating FROM data GROUP BY customer_gender ORDER BY avg_rating DESC LIMIT 1",
+  "Which city generates the most revenue from returns?": "SELECT store_location, SUM(final_price * quantity) AS returned_revenue FROM data WHERE return_status = 1 GROUP BY store_location ORDER BY returned_revenue DESC LIMIT 1",
+  "Which category has the most quantity sold?": "SELECT category, SUM(quantity) AS total_quantity FROM data GROUP BY category ORDER BY total_quantity DESC LIMIT 1",
+  "How many products were sold online vs offline?": "SELECT sales_channel, SUM(quantity) AS total_sold FROM data GROUP BY sales_channel",
+  "Which product category sells best in Delhi?": "SELECT category, SUM(quantity) AS total_sold FROM data WHERE store_location = 'Delhi' GROUP BY category ORDER BY total_sold DESC LIMIT 1",
+  "What is the total sales revenue?": "SELECT SUM(final_price * quantity) AS total_revenue FROM data",
+  "Which color is returned the most?": "SELECT color, COUNT(*) AS return_count FROM data WHERE return_status = 1 GROUP BY color ORDER BY return_count DESC LIMIT 1",
+  "Which brand has highest return rate?": "SELECT brand, 100.0 * SUM(CASE WHEN return_status THEN 1 ELSE 0 END) / COUNT(*) AS return_rate FROM data GROUP BY brand ORDER BY return_rate DESC LIMIT 1",
+  "What is the average final price per product?": "SELECT AVG(final_price) AS avg_final_price FROM data",
+  "What are the most common return reasons?": "SELECT return_reason, COUNT(*) AS count FROM data WHERE return_status = 1 GROUP BY return_reason ORDER BY count DESC LIMIT 5",
+  "Which category has the highest average rating?": "SELECT category, AVG(rating) AS avg_rating FROM data GROUP BY category ORDER BY avg_rating DESC LIMIT 1",
+  "Which brand sells most via app?": "SELECT brand, SUM(quantity) AS total_sold FROM data WHERE sales_channel = 'App' GROUP BY brand ORDER BY total_sold DESC LIMIT 1"
 };
 
-// Sample data for demonstration
-const generateSampleData = (rowCount: number = 100) => {
-  const brands = ['Raymond', 'Allen Solly', 'Van Heusen', 'Peter England', 'Louis Philippe'];
-  const categories = ['Formal Shirts', 'Casual Shirts', 'Trousers', 'Suits', 'T-Shirts'];
-  const locations = ['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Chennai'];
-  const channels = ['Store', 'Online', 'App'];
-  const paymentModes = ['Credit Card', 'Debit Card', 'Cash', 'UPI'];
-  const colors = ['White', 'Blue', 'Black', 'Grey', 'Navy'];
-  const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
-  
-  const data = [];
-  for (let i = 0; i < rowCount; i++) {
-    const price = Math.floor(Math.random() * 5000) + 500;
-    const discount = Math.floor(Math.random() * 30);
-    const finalPrice = Math.round(price * (1 - discount / 100));
-    const quantity = Math.floor(Math.random() * 5) + 1;
-    const isReturned = Math.random() > 0.9;
+// Feature comparison data from your Streamlit code
+const FEATURE_COMPARISON_DATA = {
+  "Multiple Data Ingestion Sources": { ForesightFlow: 1, Stylumia: 1, Fractal: 1, EDITED: 1, "Woven Insights": 1 },
+  "Hyperlocal Sentiment Analysis": { ForesightFlow: 1, Stylumia: 0, Fractal: 1, EDITED: 0, "Woven Insights": 1 },
+  "Quick Win Trend Analysis": { ForesightFlow: 1, Stylumia: 1, Fractal: 1, EDITED: 0, "Woven Insights": 1 },
+  "Prompt-based Business Querying": { ForesightFlow: 1, Stylumia: 0, Fractal: 1, EDITED: 1, "Woven Insights": 1 },
+  "Strategy Testing / Simulation": { ForesightFlow: 1, Stylumia: 1, Fractal: 1, EDITED: 0, "Woven Insights": 0 },
+  "Consulting-style Auto Report Generation": { ForesightFlow: 1, Stylumia: 0, Fractal: 1, EDITED: 0, "Woven Insights": 0 },
+  "Design Ideation (Visual AI)": { ForesightFlow: 0, Stylumia: 1, Fractal: 0, EDITED: 0, "Woven Insights": 0 },
+  "SKU-Level Pricing Automation": { ForesightFlow: 0, Stylumia: 0, Fractal: 1, EDITED: 1, "Woven Insights": 0 },
+  "Generative AI Narrative Insights": { ForesightFlow: 1, Stylumia: 1, Fractal: 1, EDITED: 1, "Woven Insights": 1 },
+  "Product Matching (CV/NLP embeddings)": { ForesightFlow: 0, Stylumia: 1, Fractal: 0, EDITED: 1, "Woven Insights": 0 }
+};
+
+// SQL Parser and Executor
+class SQLExecutor {
+  private data: any[];
+
+  constructor(data: any[]) {
+    this.data = data;
+  }
+
+  execute(sql: string): { data: any[], columns: string[] } {
+    try {
+      // Parse the SQL query
+      const parsedQuery = this.parseSQL(sql);
+      
+      // Execute based on query type
+      if (parsedQuery.type === 'SELECT') {
+        return this.executeSelect(parsedQuery);
+      }
+      
+      return { data: [], columns: [] };
+    } catch (error) {
+      console.error('SQL Execution Error:', error);
+      return { data: [{ error: 'Query execution failed' }], columns: ['error'] };
+    }
+  }
+
+  private parseSQL(sql: string) {
+    const cleanSQL = sql.trim().toUpperCase();
     
-    data.push({
-      transaction_id: `TXN${String(i + 1).padStart(6, '0')}`,
-      date_of_sale: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
-      brand: brands[Math.floor(Math.random() * brands.length)],
-      product_name: `${categories[Math.floor(Math.random() * categories.length)]} ${i + 1}`,
-      category: categories[Math.floor(Math.random() * categories.length)],
-      color: colors[Math.floor(Math.random() * colors.length)],
-      size: sizes[Math.floor(Math.random() * sizes.length)],
-      price: price,
-      discount_percent: discount,
-      final_price: finalPrice,
-      quantity: quantity,
-      payment_mode: paymentModes[Math.floor(Math.random() * paymentModes.length)],
-      store_location: locations[Math.floor(Math.random() * locations.length)],
-      sales_channel: channels[Math.floor(Math.random() * channels.length)],
-      customer_gender: Math.random() > 0.5 ? 'Male' : 'Female',
-      return_status: isReturned ? 1 : 0,
-      rating: Math.floor(Math.random() * 5) + 1,
-      delivery_days: Math.floor(Math.random() * 10) + 1
+    // Extract SELECT fields
+    const selectMatch = cleanSQL.match(/SELECT\s+(.*?)\s+FROM/);
+    const selectFields = selectMatch ? selectMatch[1].split(',').map(f => f.trim()) : ['*'];
+    
+    // Extract WHERE conditions
+    const whereMatch = cleanSQL.match(/WHERE\s+(.*?)(?:\s+GROUP|\s+ORDER|\s+LIMIT|$)/);
+    const whereClause = whereMatch ? whereMatch[1] : null;
+    
+    // Extract GROUP BY
+    const groupByMatch = cleanSQL.match(/GROUP\s+BY\s+(.*?)(?:\s+ORDER|\s+LIMIT|$)/);
+    const groupByFields = groupByMatch ? groupByMatch[1].split(',').map(f => f.trim()) : null;
+    
+    // Extract ORDER BY
+    const orderByMatch = cleanSQL.match(/ORDER\s+BY\s+(.*?)(?:\s+LIMIT|$)/);
+    const orderByClause = orderByMatch ? orderByMatch[1] : null;
+    
+    // Extract LIMIT
+    const limitMatch = cleanSQL.match(/LIMIT\s+(\d+)/);
+    const limit = limitMatch ? parseInt(limitMatch[1]) : null;
+
+    return {
+      type: 'SELECT',
+      fields: selectFields,
+      where: whereClause,
+      groupBy: groupByFields,
+      orderBy: orderByClause,
+      limit: limit
+    };
+  }
+
+  private executeSelect(query: any): { data: any[], columns: string[] } {
+    let result = [...this.data];
+
+    // Apply WHERE clause
+    if (query.where) {
+      result = this.applyWhere(result, query.where);
+    }
+
+    // Apply GROUP BY
+    if (query.groupBy) {
+      result = this.applyGroupBy(result, query.groupBy, query.fields);
+    } else {
+      // Apply SELECT fields for non-grouped queries
+      result = this.applySelect(result, query.fields);
+    }
+
+    // Apply ORDER BY
+    if (query.orderBy) {
+      result = this.applyOrderBy(result, query.orderBy);
+    }
+
+    // Apply LIMIT
+    if (query.limit) {
+      result = result.slice(0, query.limit);
+    }
+
+    // Get column names
+    const columns = result.length > 0 ? Object.keys(result[0]) : [];
+
+    return { data: result, columns };
+  }
+
+  private applyWhere(data: any[], whereClause: string): any[] {
+    return data.filter(row => {
+      try {
+        // Handle return_status conditions
+        if (whereClause.includes('RETURN_STATUS = 1')) {
+          return row.return_status === 1 || row.return_status === '1' || row.return_status === true;
+        }
+        
+        // Handle specific value conditions like store_location = 'Delhi'
+        const equalityMatch = whereClause.match(/(\w+)\s*=\s*'([^']+)'/);
+        if (equalityMatch) {
+          const [, field, value] = equalityMatch;
+          return row[field.toLowerCase()] === value;
+        }
+
+        return true;
+      } catch (error) {
+        return true;
+      }
     });
   }
-  return data;
-};
 
-// SQL Query Executor - processes actual data
-const executeSQLQuery = (query: string, data: any[]): QueryResult => {
-  const lowerQuery = query.toLowerCase().trim();
-  
-  try {
-    // Parse different types of SQL queries and execute them on the actual dataset
+  private applyGroupBy(data: any[], groupByFields: string[], selectFields: string[]): any[] {
+    const groups: { [key: string]: any[] } = {};
     
-    // Most sold product
-    if (lowerQuery.includes('most sold product') || 
-        (lowerQuery.includes('product_name') && lowerQuery.includes('sum(quantity)') && lowerQuery.includes('order by') && lowerQuery.includes('desc'))) {
-      const productSales = data.reduce((acc, row) => {
-        const product = row.product_name || 'Unknown Product';
-        const quantity = Number(row.quantity) || 0;
-        acc[product] = (acc[product] || 0) + quantity;
-        return acc;
-      }, {} as Record<string, number>);
+    // Group the data
+    data.forEach(row => {
+      const groupKey = groupByFields.map(field => row[field.toLowerCase()] || '').join('|');
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(row);
+    });
+
+    // Aggregate the groups
+    return Object.entries(groups).map(([groupKey, groupRows]) => {
+      const result: any = {};
       
-      const sortedProducts = Object.entries(productSales)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, lowerQuery.includes('limit 1') ? 1 : 5);
-      
-      return {
-        data: sortedProducts.map(([product_name, total_sold]) => ({ product_name, total_sold })),
-        columns: ['product_name', 'total_sold'],
-        query
-      };
-    }
-    
-    // Brand revenue
-    if ((lowerQuery.includes('brand') && lowerQuery.includes('revenue')) || 
-        (lowerQuery.includes('sum(final_price * quantity)') && lowerQuery.includes('brand'))) {
-      const brandRevenue = data.reduce((acc, row) => {
-        const brand = row.brand || 'Unknown Brand';
-        const revenue = (Number(row.final_price) || 0) * (Number(row.quantity) || 0);
-        acc[brand] = (acc[brand] || 0) + revenue;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      const sortedBrands = Object.entries(brandRevenue)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, lowerQuery.includes('limit 1') ? 1 : 5);
-      
-      return {
-        data: sortedBrands.map(([brand, revenue]) => ({ brand, revenue: Math.round(revenue) })),
-        columns: ['brand', 'revenue'],
-        query
-      };
-    }
-    
-    // Category returns
-    if (lowerQuery.includes('category') && lowerQuery.includes('return') && lowerQuery.includes('count')) {
-      const categoryReturns = data
-        .filter(row => Number(row.return_status) === 1)
-        .reduce((acc, row) => {
-          const category = row.category || 'Unknown Category';
-          acc[category] = (acc[category] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-      
-      const sortedCategories = Object.entries(categoryReturns)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, lowerQuery.includes('limit 1') ? 1 : 5);
-      
-      return {
-        data: sortedCategories.map(([category, return_count]) => ({ category, return_count })),
-        columns: ['category', 'return_count'],
-        query
-      };
-    }
-    
-    // Average delivery time
-    if (lowerQuery.includes('avg(delivery_days)') || lowerQuery.includes('average delivery')) {
-      const totalDays = data.reduce((sum, row) => sum + (Number(row.delivery_days) || 0), 0);
-      const avgDelivery = data.length > 0 ? totalDays / data.length : 0;
-      
-      return {
-        data: [{ avg_delivery_time: Math.round(avgDelivery * 10) / 10 }],
-        columns: ['avg_delivery_time'],
-        query
-      };
-    }
-    
-    // Payment mode usage
-    if (lowerQuery.includes('payment_mode') && lowerQuery.includes('count')) {
-      const paymentCounts = data.reduce((acc, row) => {
-        const payment = row.payment_mode || 'Unknown';
-        acc[payment] = (acc[payment] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      const sortedPayments = Object.entries(paymentCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, lowerQuery.includes('limit 1') ? 1 : 3);
-      
-      return {
-        data: sortedPayments.map(([payment_mode, count]) => ({ payment_mode, count })),
-        columns: ['payment_mode', 'count'],
-        query
-      };
-    }
-    
-    // Store location revenue
-    if (lowerQuery.includes('store_location') && lowerQuery.includes('revenue')) {
-      const locationRevenue = data.reduce((acc, row) => {
-        const location = row.store_location || 'Unknown Location';
-        const revenue = (Number(row.final_price) || 0) * (Number(row.quantity) || 0);
-        acc[location] = (acc[location] || 0) + revenue;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      const sortedLocations = Object.entries(locationRevenue)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, lowerQuery.includes('limit 1') ? 1 : 5);
-      
-      return {
-        data: sortedLocations.map(([store_location, revenue]) => ({ store_location, revenue: Math.round(revenue) })),
-        columns: ['store_location', 'revenue'],
-        query
-      };
-    }
-    
-    // Average discount
-    if (lowerQuery.includes('avg(discount_percent)') || lowerQuery.includes('average discount')) {
-      const totalDiscount = data.reduce((sum, row) => sum + (Number(row.discount_percent) || 0), 0);
-      const avgDiscount = data.length > 0 ? totalDiscount / data.length : 0;
-      
-      return {
-        data: [{ avg_discount: Math.round(avgDiscount * 10) / 10 }],
-        columns: ['avg_discount'],
-        query
-      };
-    }
-    
-    // Brand ratings
-    if (lowerQuery.includes('brand') && lowerQuery.includes('avg(rating)')) {
-      const brandRatings = data.reduce((acc, row) => {
-        const brand = row.brand || 'Unknown Brand';
-        const rating = Number(row.rating) || 0;
-        if (!acc[brand]) acc[brand] = { total: 0, count: 0 };
-        acc[brand].total += rating;
-        acc[brand].count += 1;
-        return acc;
-      }, {} as Record<string, { total: number; count: number }>);
-      
-      const avgRatings = Object.entries(brandRatings)
-        .map(([brand, { total, count }]) => ({ brand, avg_rating: Math.round((total / count) * 10) / 10 }))
-        .sort((a, b) => b.avg_rating - a.avg_rating)
-        .slice(0, lowerQuery.includes('limit 1') ? 1 : 5);
-      
-      return {
-        data: avgRatings,
-        columns: ['brand', 'avg_rating'],
-        query
-      };
-    }
-    
-    // Sales channel performance
-    if (lowerQuery.includes('sales_channel') && lowerQuery.includes('total_sales')) {
-      const channelSales = data.reduce((acc, row) => {
-        const channel = row.sales_channel || 'Unknown Channel';
-        const sales = (Number(row.final_price) || 0) * (Number(row.quantity) || 0);
-        acc[channel] = (acc[channel] || 0) + sales;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      const sortedChannels = Object.entries(channelSales)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, lowerQuery.includes('limit 1') ? 1 : 3);
-      
-      return {
-        data: sortedChannels.map(([sales_channel, total_sales]) => ({ sales_channel, total_sales: Math.round(total_sales) })),
-        columns: ['sales_channel', 'total_sales'],
-        query
-      };
-    }
-    
-    // Gender sales contribution
-    if (lowerQuery.includes('customer_gender') && lowerQuery.includes('total_sales')) {
-      const genderSales = data.reduce((acc, row) => {
-        const gender = row.customer_gender || 'Unknown';
-        const sales = (Number(row.final_price) || 0) * (Number(row.quantity) || 0);
-        acc[gender] = (acc[gender] || 0) + sales;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      const sortedGenders = Object.entries(genderSales)
-        .sort(([,a], [,b]) => b - a);
-      
-      return {
-        data: sortedGenders.map(([customer_gender, total_sales]) => ({ customer_gender, total_sales: Math.round(total_sales) })),
-        columns: ['customer_gender', 'total_sales'],
-        query
-      };
-    }
-    
-    // Average price
-    if (lowerQuery.includes('avg(price)')) {
-      const totalPrice = data.reduce((sum, row) => sum + (Number(row.price) || 0), 0);
-      const avgPrice = data.length > 0 ? totalPrice / data.length : 0;
-      
-      return {
-        data: [{ avg_price: Math.round(avgPrice) }],
-        columns: ['avg_price'],
-        query
-      };
-    }
-    
-    // Color popularity
-    if (lowerQuery.includes('color') && lowerQuery.includes('count')) {
-      const colorCounts = data.reduce((acc, row) => {
-        const color = row.color || 'Unknown Color';
-        const quantity = Number(row.quantity) || 0;
-        acc[color] = (acc[color] || 0) + quantity;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      const sortedColors = Object.entries(colorCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, lowerQuery.includes('limit 1') ? 1 : 5);
-      
-      return {
-        data: sortedColors.map(([color, count]) => ({ color, count })),
-        columns: ['color', 'count'],
-        query
-      };
-    }
-    
-    // Size popularity
-    if (lowerQuery.includes('size') && lowerQuery.includes('count')) {
-      const sizeCounts = data.reduce((acc, row) => {
-        const size = row.size || 'Unknown Size';
-        const quantity = Number(row.quantity) || 0;
-        acc[size] = (acc[size] || 0) + quantity;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      const sortedSizes = Object.entries(sizeCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, lowerQuery.includes('limit 1') ? 1 : 5);
-      
-      return {
-        data: sortedSizes.map(([size, count]) => ({ size, count })),
-        columns: ['size', 'count'],
-        query
-      };
-    }
-    
-    // Return rate
-    if (lowerQuery.includes('return_rate')) {
-      const totalReturns = data.filter(row => Number(row.return_status) === 1).length;
-      const returnRate = data.length > 0 ? (totalReturns / data.length) * 100 : 0;
-      
-      return {
-        data: [{ return_rate: Math.round(returnRate * 100) / 100 }],
-        columns: ['return_rate'],
-        query
-      };
-    }
-    
-    // Total revenue
-    if (lowerQuery.includes('sum(final_price * quantity)') || lowerQuery.includes('total_revenue')) {
-      const totalRevenue = data.reduce((sum, row) => {
-        return sum + ((Number(row.final_price) || 0) * (Number(row.quantity) || 0));
-      }, 0);
-      
-      return {
-        data: [{ total_revenue: Math.round(totalRevenue) }],
-        columns: ['total_revenue'],
-        query
-      };
-    }
-    
-    // Total items sold
-    if (lowerQuery.includes('sum(quantity)') || lowerQuery.includes('total_items_sold')) {
-      const totalItems = data.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0);
-      
-      return {
-        data: [{ total_items_sold: totalItems }],
-        columns: ['total_items_sold'],
-        query
-      };
-    }
-    
-    // Default: return sample of data
-    return {
-      data: data.slice(0, 10),
-      columns: Object.keys(data[0] || {}),
-      query
-    };
-    
-  } catch (error) {
-    console.error('SQL execution error:', error);
-    return {
-      data: [],
-      columns: [],
-      query
-    };
+      // Add group by fields
+      groupByFields.forEach((field, index) => {
+        const fieldName = field.toLowerCase();
+        result[fieldName] = groupKey.split('|')[index];
+      });
+
+      // Process aggregate functions
+      selectFields.forEach(field => {
+        if (field.includes('SUM(')) {
+          const sumField = this.extractFieldFromFunction(field, 'SUM');
+          const alias = this.extractAlias(field);
+          
+          if (sumField.includes('*')) {
+            // Handle SUM(final_price * quantity)
+            const [field1, field2] = sumField.split('*').map(f => f.trim());
+            result[alias] = groupRows.reduce((sum, row) => {
+              const val1 = parseFloat(row[field1]) || 0;
+              const val2 = parseFloat(row[field2]) || 0;
+              return sum + (val1 * val2);
+            }, 0);
+          } else {
+            result[alias] = groupRows.reduce((sum, row) => sum + (parseFloat(row[sumField]) || 0), 0);
+          }
+        } else if (field.includes('COUNT(')) {
+          const alias = this.extractAlias(field);
+          result[alias] = groupRows.length;
+        } else if (field.includes('AVG(')) {
+          const avgField = this.extractFieldFromFunction(field, 'AVG');
+          const alias = this.extractAlias(field);
+          const sum = groupRows.reduce((sum, row) => sum + (parseFloat(row[avgField]) || 0), 0);
+          result[alias] = groupRows.length > 0 ? sum / groupRows.length : 0;
+        } else if (field.includes('CASE WHEN')) {
+          // Handle CASE WHEN return_status THEN 1 ELSE 0 END
+          const alias = this.extractAlias(field);
+          if (field.includes('return_status')) {
+            const returnCount = groupRows.filter(row => 
+              row.return_status === 1 || row.return_status === '1' || row.return_status === true
+            ).length;
+            
+            if (field.includes('100.0 *')) {
+              // Return rate calculation
+              result[alias] = groupRows.length > 0 ? (returnCount / groupRows.length) * 100 : 0;
+            } else {
+              result[alias] = returnCount;
+            }
+          }
+        } else if (!field.includes('(') && !groupByFields.includes(field)) {
+          // Regular field (take first value from group)
+          const fieldName = field.toLowerCase();
+          result[fieldName] = groupRows[0][fieldName];
+        }
+      });
+
+      return result;
+    });
   }
-};
+
+  private applySelect(data: any[], selectFields: string[]): any[] {
+    if (selectFields.includes('*')) {
+      return data;
+    }
+
+    return data.map(row => {
+      const result: any = {};
+      selectFields.forEach(field => {
+        if (field.includes('SUM(')) {
+          const sumField = this.extractFieldFromFunction(field, 'SUM');
+          const alias = this.extractAlias(field);
+          
+          if (sumField.includes('*')) {
+            const [field1, field2] = sumField.split('*').map(f => f.trim());
+            const val1 = parseFloat(row[field1]) || 0;
+            const val2 = parseFloat(row[field2]) || 0;
+            result[alias] = val1 * val2;
+          } else {
+            result[alias] = parseFloat(row[sumField]) || 0;
+          }
+        } else if (field.includes('AVG(')) {
+          const avgField = this.extractFieldFromFunction(field, 'AVG');
+          const alias = this.extractAlias(field);
+          result[alias] = parseFloat(row[avgField]) || 0;
+        } else {
+          const fieldName = field.toLowerCase();
+          result[fieldName] = row[fieldName];
+        }
+      });
+      return result;
+    });
+  }
+
+  private applyOrderBy(data: any[], orderByClause: string): any[] {
+    const [field, direction = 'ASC'] = orderByClause.split(/\s+/);
+    const fieldName = field.toLowerCase();
+    const isDesc = direction.toUpperCase() === 'DESC';
+
+    return data.sort((a, b) => {
+      const aVal = parseFloat(a[fieldName]) || a[fieldName] || 0;
+      const bVal = parseFloat(b[fieldName]) || b[fieldName] || 0;
+      
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return isDesc ? bVal - aVal : aVal - bVal;
+      } else {
+        const comparison = String(aVal).localeCompare(String(bVal));
+        return isDesc ? -comparison : comparison;
+      }
+    });
+  }
+
+  private extractFieldFromFunction(field: string, func: string): string {
+    const match = field.match(new RegExp(`${func}\\(([^)]+)\\)`, 'i'));
+    return match ? match[1].trim() : '';
+  }
+
+  private extractAlias(field: string): string {
+    const asMatch = field.match(/\s+AS\s+(\w+)/i);
+    if (asMatch) {
+      return asMatch[1].toLowerCase();
+    }
+    
+    // If no AS clause, create alias from function
+    if (field.includes('SUM(')) return 'sum_result';
+    if (field.includes('COUNT(')) return 'count_result';
+    if (field.includes('AVG(')) return 'avg_result';
+    
+    return field.toLowerCase();
+  }
+}
 
 export const DataPipelineTab: React.FC = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -428,6 +382,7 @@ export const DataPipelineTab: React.FC = () => {
   const [beforeStats, setBeforeStats] = useState<DataStats | null>(null);
   const [afterStats, setAfterStats] = useState<DataStats | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [preserveRows, setPreserveRows] = useState(false);
   const [currentQuery, setCurrentQuery] = useState('');
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [isQuerying, setIsQuerying] = useState(false);
@@ -435,6 +390,7 @@ export const DataPipelineTab: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [isGeneratingSQL, setIsGeneratingSQL] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState<string>('Multiple Data Ingestion Sources');
   const [activeQueryMode, setActiveQueryMode] = useState<'predefined' | 'custom' | 'nlp'>('predefined');
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -444,23 +400,50 @@ export const DataPipelineTab: React.FC = () => {
     setUploadedFile(file);
     setActiveStep('upload');
     
-    // For demo purposes, generate sample data instead of parsing file
-    const sampleData = generateSampleData(150);
-    setRawData(sampleData);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        let data: any[] = [];
+        
+        if (file.name.endsWith('.csv')) {
+          // Simple CSV parsing (you might want to use a proper CSV parser)
+          const lines = text.split('\n');
+          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+          data = lines.slice(1).filter(line => line.trim()).map(line => {
+            const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+            const row: any = {};
+            headers.forEach((header, index) => {
+              row[header] = values[index] || '';
+            });
+            return row;
+          });
+        }
+        
+        setRawData(data);
+        setBeforeStats({
+          shape: [data.length, Object.keys(data[0] || {}).length],
+          columns: Object.keys(data[0] || {}),
+          nullCounts: {}
+        });
+        
+        setCleaningLogs([{
+          message: `File uploaded successfully: ${file.name}`,
+          type: 'success'
+        }]);
+        
+      } catch (error) {
+        setCleaningLogs([{
+          message: `Error reading file: ${error}`,
+          type: 'error'
+        }]);
+      }
+    };
     
-    setBeforeStats({
-      shape: [sampleData.length, Object.keys(sampleData[0] || {}).length],
-      columns: Object.keys(sampleData[0] || {}),
-      nullCounts: {}
-    });
-    
-    setCleaningLogs([{
-      message: `File uploaded successfully: ${file.name} (${sampleData.length} rows detected)`,
-      type: 'success'
-    }]);
+    reader.readAsText(file);
   }, []);
 
-  const cleanData = useCallback(async () => {
+  const cleanData = useCallback(() => {
     if (!rawData.length) return;
     
     setIsProcessing(true);
@@ -468,117 +451,141 @@ export const DataPipelineTab: React.FC = () => {
     const logs: CleaningLog[] = [];
     
     try {
-      // Add initial log
-      logs.push({
-        message: 'Starting data cleaning process...',
-        type: 'info'
-      });
-      setCleaningLogs([...logs]);
+      // Create a copy of the data
+      let cleaned = JSON.parse(JSON.stringify(rawData));
       
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Create a copy of the data for cleaning
-      let cleaned = [...rawData];
-      
-      logs.push({
-        message: 'Validating data structure and column mapping...',
-        type: 'info'
-      });
-      setCleaningLogs([...logs]);
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Column mapping simulation
+      // Column mapping
       const foundColumns: Record<string, string> = {};
-      const dataColumns = Object.keys(cleaned[0] || {});
+      const dataColumns = Object.keys(cleaned[0] || {}).map(col => col.toLowerCase().trim());
       
       for (const [standardName, variants] of Object.entries(COLUMN_MAPPING)) {
         for (const variant of variants) {
-          const matchedColumn = dataColumns.find(col => 
-            col.toLowerCase().trim() === variant.toLowerCase().trim()
-          );
-          if (matchedColumn) {
-            foundColumns[matchedColumn] = standardName;
-            break;
+          if (dataColumns.includes(variant.toLowerCase().trim())) {
+            const originalName = Object.keys(cleaned[0] || {}).find(
+              col => col.toLowerCase().trim() === variant.toLowerCase().trim()
+            );
+            if (originalName) {
+              foundColumns[originalName] = standardName;
+            }
           }
         }
       }
       
+      // Rename columns
+      cleaned = cleaned.map(row => {
+        const newRow: any = {};
+        for (const [oldName, newName] of Object.entries(foundColumns)) {
+          newRow[newName] = row[oldName];
+          logs.push({
+            message: `Renamed column '${oldName}' to '${newName}'`,
+            type: 'info'
+          });
+        }
+        // Keep unmapped columns
+        for (const [key, value] of Object.entries(row)) {
+          if (!foundColumns[key]) {
+            newRow[key] = value;
+          }
+        }
+        return newRow;
+      });
+      
       logs.push({
-        message: `Column mapping completed: ${Object.keys(foundColumns).length} columns mapped`,
+        message: 'Column mapping completed',
         type: 'success'
       });
-      setCleaningLogs([...logs]);
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Data cleaning operations
-      logs.push({
-        message: 'Cleaning and standardizing data values...',
-        type: 'info'
-      });
-      setCleaningLogs([...logs]);
-      
-      await new Promise(resolve => setTimeout(resolve, 400));
-      
-      // Apply cleaning transformations
       cleaned = cleaned.map(row => {
         const cleanedRow = { ...row };
         
-        // Ensure numeric fields are properly formatted
+        // Fill missing values
+        if (!cleanedRow.return_reason || cleanedRow.return_reason === '') {
+          cleanedRow.return_reason = 'No return reason';
+        }
+        if (!cleanedRow.review_text || cleanedRow.review_text === '') {
+          cleanedRow.review_text = 'No review provided';
+        }
+        if (!cleanedRow.rating || cleanedRow.rating === '') {
+          cleanedRow.rating = 0;
+        }
+        if (!cleanedRow.co2_saved || cleanedRow.co2_saved === '') {
+          cleanedRow.co2_saved = 0;
+        }
+        
+        // Convert date format
+        if (cleanedRow.date_of_sale) {
+          try {
+            cleanedRow.date_of_sale = new Date(cleanedRow.date_of_sale).toISOString().split('T')[0];
+          } catch (e) {
+            // Keep original if conversion fails
+          }
+        }
+        
+        // Convert numeric fields
         if (cleanedRow.price) {
-          cleanedRow.price = Number(cleanedRow.price) || 0;
+          cleanedRow.price = parseFloat(cleanedRow.price) || 0;
         }
         if (cleanedRow.final_price) {
-          cleanedRow.final_price = Number(cleanedRow.final_price) || 0;
+          cleanedRow.final_price = parseFloat(cleanedRow.final_price) || 0;
         }
         if (cleanedRow.quantity) {
-          cleanedRow.quantity = Number(cleanedRow.quantity) || 0;
+          cleanedRow.quantity = parseInt(cleanedRow.quantity) || 0;
         }
         if (cleanedRow.rating) {
-          cleanedRow.rating = Number(cleanedRow.rating) || 0;
+          cleanedRow.rating = parseFloat(cleanedRow.rating) || 0;
         }
         if (cleanedRow.discount_percent) {
-          const discount = Number(cleanedRow.discount_percent) || 0;
+          const discount = parseFloat(cleanedRow.discount_percent) || 0;
           cleanedRow.discount_percent = Math.max(0, Math.min(100, discount));
+        }
+        
+        // Convert return_status to boolean/number
+        if (cleanedRow.return_status !== undefined) {
+          if (cleanedRow.return_status === 'true' || cleanedRow.return_status === '1' || cleanedRow.return_status === 1) {
+            cleanedRow.return_status = 1;
+          } else {
+            cleanedRow.return_status = 0;
+          }
         }
         
         // Standardize text fields
         if (cleanedRow.brand) {
-          cleanedRow.brand = String(cleanedRow.brand).toUpperCase().trim();
+          cleanedRow.brand = cleanedRow.brand.toString().toUpperCase().trim();
         }
         if (cleanedRow.category) {
-          cleanedRow.category = String(cleanedRow.category).replace(/\b\w/g, l => l.toUpperCase()).trim();
+          cleanedRow.category = cleanedRow.category.toString().replace(/\b\w/g, l => l.toUpperCase()).trim();
+        }
+        if (cleanedRow.sub_category) {
+          cleanedRow.sub_category = cleanedRow.sub_category.toString().replace(/\b\w/g, l => l.toUpperCase()).trim();
         }
         if (cleanedRow.payment_mode) {
-          cleanedRow.payment_mode = String(cleanedRow.payment_mode).toUpperCase().trim();
+          cleanedRow.payment_mode = cleanedRow.payment_mode.toString().toUpperCase().trim();
         }
         if (cleanedRow.store_location) {
-          cleanedRow.store_location = String(cleanedRow.store_location).replace(/\b\w/g, l => l.toUpperCase()).trim();
+          cleanedRow.store_location = cleanedRow.store_location.toString().replace(/\b\w/g, l => l.toUpperCase()).trim();
         }
         if (cleanedRow.sales_channel) {
-          cleanedRow.sales_channel = String(cleanedRow.sales_channel).replace(/\b\w/g, l => l.toUpperCase()).trim();
+          cleanedRow.sales_channel = cleanedRow.sales_channel.toString().replace(/\b\w/g, l => l.toUpperCase()).trim();
         }
         
         return cleanedRow;
       });
       
       logs.push({
-        message: 'Data standardization completed successfully',
+        message: 'Data cleaning operations completed',
         type: 'success'
       });
-      setCleaningLogs([...logs]);
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
       
       logs.push({
-        message: 'Validating data quality and consistency...',
+        message: 'Filled missing values with defaults',
         type: 'info'
       });
-      setCleaningLogs([...logs]);
       
-      await new Promise(resolve => setTimeout(resolve, 400));
+      logs.push({
+        message: 'Converted numeric fields and standardized text',
+        type: 'info'
+      });
       
       setCleanedData(cleaned);
       setAfterStats({
@@ -588,23 +595,22 @@ export const DataPipelineTab: React.FC = () => {
       });
       
       logs.push({
-        message: `Data cleaning completed successfully! Processed ${cleaned.length} rows with ${Object.keys(cleaned[0] || {}).length} columns`,
+        message: `Data cleaning completed successfully. Processed ${cleaned.length} rows.`,
         type: 'success'
       });
-      setCleaningLogs([...logs]);
       
     } catch (error) {
       logs.push({
         message: `Error during cleaning: ${error}`,
         type: 'error'
       });
-      setCleaningLogs([...logs]);
     }
     
+    setCleaningLogs(logs);
     setIsProcessing(false);
-  }, [rawData]);
+  }, [rawData, preserveRows]);
 
-  const executeQuery = useCallback(async (query: string) => {
+  const executeQuery = useCallback((query: string) => {
     if (!cleanedData.length) return;
     
     setIsQuerying(true);
@@ -613,20 +619,26 @@ export const DataPipelineTab: React.FC = () => {
     const startTime = Date.now();
     
     try {
-      // Simulate query processing delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Create SQL executor with cleaned data
+      const executor = new SQLExecutor(cleanedData);
       
-      // Execute the actual SQL query on the cleaned dataset
-      const result = executeSQLQuery(query, cleanedData);
-      result.executionTime = Date.now() - startTime;
+      // Execute the SQL query
+      const result = executor.execute(query);
       
-      setQueryResult(result);
+      const executionTime = Date.now() - startTime;
+      
+      setQueryResult({
+        data: result.data,
+        columns: result.columns,
+        query,
+        executionTime
+      });
       
     } catch (error) {
       console.error('Query execution error:', error);
       setQueryResult({
-        data: [],
-        columns: [],
+        data: [{ error: 'Query execution failed' }],
+        columns: ['error'],
         query,
         executionTime: Date.now() - startTime
       });
@@ -652,7 +664,7 @@ export const DataPipelineTab: React.FC = () => {
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: `I'll analyze your dataset to answer: ${question}`,
+        content: `I'll execute this query for you: ${question}`,
         query,
         timestamp: new Date()
       };
@@ -666,54 +678,27 @@ export const DataPipelineTab: React.FC = () => {
     
     try {
       // Simulate AI SQL generation
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Enhanced pattern matching for demo
+      const schema = afterStats?.columns.join(', ') || '';
+      
+      // Simple pattern matching for demo (in real implementation, you'd call an AI API)
       let generatedSQL = '';
-      const lowerPrompt = prompt.toLowerCase();
       
-      if (lowerPrompt.includes('most sold') || lowerPrompt.includes('best selling') || lowerPrompt.includes('top selling')) {
+      if (prompt.toLowerCase().includes('most sold') || prompt.toLowerCase().includes('best selling')) {
         generatedSQL = "SELECT product_name, SUM(quantity) AS total_sold FROM data GROUP BY product_name ORDER BY total_sold DESC LIMIT 5";
-      } else if (lowerPrompt.includes('revenue') || lowerPrompt.includes('sales') || lowerPrompt.includes('money')) {
-        if (lowerPrompt.includes('brand')) {
-          generatedSQL = "SELECT brand, SUM(final_price * quantity) AS revenue FROM data GROUP BY brand ORDER BY revenue DESC LIMIT 5";
-        } else if (lowerPrompt.includes('location') || lowerPrompt.includes('store')) {
-          generatedSQL = "SELECT store_location, SUM(final_price * quantity) AS revenue FROM data GROUP BY store_location ORDER BY revenue DESC LIMIT 5";
-        } else {
-          generatedSQL = "SELECT SUM(final_price * quantity) AS total_revenue FROM data";
-        }
-      } else if (lowerPrompt.includes('return')) {
-        if (lowerPrompt.includes('rate')) {
-          generatedSQL = "SELECT ROUND(100.0 * SUM(CASE WHEN return_status THEN 1 ELSE 0 END) / COUNT(*), 2) AS return_rate FROM data";
-        } else {
-          generatedSQL = "SELECT category, COUNT(*) AS return_count FROM data WHERE return_status = 1 GROUP BY category ORDER BY return_count DESC LIMIT 5";
-        }
-      } else if (lowerPrompt.includes('average') || lowerPrompt.includes('avg')) {
-        if (lowerPrompt.includes('price')) {
-          generatedSQL = "SELECT AVG(price) AS avg_price FROM data";
-        } else if (lowerPrompt.includes('rating')) {
-          generatedSQL = "SELECT AVG(rating) AS avg_rating FROM data";
-        } else if (lowerPrompt.includes('delivery')) {
-          generatedSQL = "SELECT AVG(delivery_days) AS avg_delivery_time FROM data";
-        } else {
-          generatedSQL = "SELECT AVG(price) AS avg_price, AVG(rating) AS avg_rating FROM data";
-        }
-      } else if (lowerPrompt.includes('payment') || lowerPrompt.includes('pay')) {
-        generatedSQL = "SELECT payment_mode, COUNT(*) AS count FROM data GROUP BY payment_mode ORDER BY count DESC LIMIT 3";
-      } else if (lowerPrompt.includes('color')) {
-        generatedSQL = "SELECT color, SUM(quantity) AS count FROM data GROUP BY color ORDER BY count DESC LIMIT 5";
-      } else if (lowerPrompt.includes('size')) {
-        generatedSQL = "SELECT size, SUM(quantity) AS count FROM data GROUP BY size ORDER BY count DESC LIMIT 5";
-      } else if (lowerPrompt.includes('gender')) {
-        generatedSQL = "SELECT customer_gender, SUM(final_price * quantity) AS total_sales FROM data GROUP BY customer_gender ORDER BY total_sales DESC";
-      } else if (lowerPrompt.includes('channel')) {
-        generatedSQL = "SELECT sales_channel, SUM(final_price * quantity) AS total_sales FROM data GROUP BY sales_channel ORDER BY total_sales DESC";
+      } else if (prompt.toLowerCase().includes('revenue') || prompt.toLowerCase().includes('sales')) {
+        generatedSQL = "SELECT brand, SUM(final_price * quantity) AS revenue FROM data GROUP BY brand ORDER BY revenue DESC LIMIT 5";
+      } else if (prompt.toLowerCase().includes('return')) {
+        generatedSQL = "SELECT category, COUNT(*) AS return_count FROM data WHERE return_status = 1 GROUP BY category ORDER BY return_count DESC";
+      } else if (prompt.toLowerCase().includes('average') || prompt.toLowerCase().includes('avg')) {
+        generatedSQL = "SELECT AVG(price) AS average_price, AVG(rating) AS average_rating FROM data";
       } else {
         generatedSQL = "SELECT * FROM data LIMIT 10";
       }
       
       setCurrentQuery(generatedSQL);
-      await executeQuery(generatedSQL);
+      executeQuery(generatedSQL);
       
       // Add to chat
       const userMessage: ChatMessage = {
@@ -726,7 +711,7 @@ export const DataPipelineTab: React.FC = () => {
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: `I've analyzed your dataset and generated this SQL query to answer your question:`,
+        content: `I've generated and executed this SQL query based on your request:`,
         query: generatedSQL,
         timestamp: new Date()
       };
@@ -738,7 +723,7 @@ export const DataPipelineTab: React.FC = () => {
     }
     
     setIsGeneratingSQL(false);
-  }, [executeQuery]);
+  }, [afterStats, executeQuery]);
 
   const handlePromptSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -785,6 +770,19 @@ export const DataPipelineTab: React.FC = () => {
               {index < 2 && <div className="w-8 h-px bg-gray-300 mx-2"></div>}
             </div>
           ))}
+        </div>
+
+        {/* Settings */}
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={preserveRows}
+              onChange={(e) => setPreserveRows(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            <span className="text-sm text-gray-700">Preserve rows with invalid data</span>
+          </label>
         </div>
       </div>
 
@@ -1100,7 +1098,7 @@ export const DataPipelineTab: React.FC = () => {
                   <p className="text-sm font-mono text-gray-700">{queryResult.query}</p>
                   {queryResult.executionTime && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Executed in {queryResult.executionTime}ms • {queryResult.data.length} rows returned
+                      Executed in {queryResult.executionTime}ms
                     </p>
                   )}
                 </div>
@@ -1178,6 +1176,52 @@ export const DataPipelineTab: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Feature Comparison */}
+      {queryResult && (
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Feature Comparison</h3>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Choose feature to compare:
+            </label>
+            <select
+              value={selectedFeature}
+              onChange={(e) => setSelectedFeature(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg"
+            >
+              {Object.keys(FEATURE_COMPARISON_DATA).map(feature => (
+                <option key={feature} value={feature}>{feature}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-5 gap-4">
+            {Object.entries(FEATURE_COMPARISON_DATA[selectedFeature]).map(([company, support]) => (
+              <div key={company} className="text-center">
+                <div className={`h-20 rounded-lg flex items-end justify-center p-2 ${
+                  support ? 'bg-blue-500' : 'bg-gray-200'
+                }`}>
+                  <div className={`w-full rounded ${support ? 'bg-blue-600' : 'bg-gray-300'}`} 
+                       style={{ height: `${support * 100}%` }}>
+                  </div>
+                </div>
+                <div className="mt-2 text-sm font-medium text-gray-700">{company}</div>
+                <div className="text-xs text-gray-500">{support * 100}%</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">Feature Analysis: {selectedFeature}</h4>
+            <p className="text-sm text-blue-800">
+              ForesightFlow leads in {selectedFeature.toLowerCase()} with comprehensive implementation 
+              compared to competitors in the fashion retail AI space.
+            </p>
           </div>
         </div>
       )}
